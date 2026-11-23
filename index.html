@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ujian Sekolah - Pendidikan Anti Korupsi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Mencegah seleksi teks secara global */
+        body {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            overflow: hidden; /* Mencegah scroll di body, ditangani di container */
+        }
+        
+        /* Custom Scrollbar untuk area soal */
+        .custom-scroll::-webkit-scrollbar { width: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+
+        /* Radio Button Custom Styling */
+        .option-label { cursor: pointer; }
+        .option-input:checked + .option-box {
+            background-color: #dbeafe;
+            border-color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans h-screen w-screen relative">
+
+    <!-- ==================== HALAMAN LOGIN ==================== -->
+    <div id="page-login" class="flex items-center justify-center h-full w-full">
+        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md border-t-4 border-blue-600">
+            <div class="text-center mb-6">
+                <i class="fas fa-shield-alt text-4xl text-blue-600 mb-2"></i>
+                <h1 class="text-2xl font-bold text-gray-800">CBT Anti-Cheat</h1>
+                <p class="text-sm text-gray-500">Pendidikan Anti Korupsi - Kelas 8</p>
+            </div>
+            
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                    <input type="text" id="inputNama" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Masukkan nama lengkap">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
+                    <select id="inputKelas" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                        <option value="" disabled selected>Pilih Kelas</option>
+                        <option value="8 A">8 A</option>
+                        <option value="8 B">8 B</option>
+                        <option value="8 C">8 C</option>
+                        <option value="8 D">8 D</option>
+                        <option value="8 E">8 E</option>
+                        <option value="8 F">8 F</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Token Ujian</label>
+                    <input type="text" id="inputToken" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition uppercase" placeholder="Masukkan token">
+                    <p id="tokenError" class="text-red-500 text-xs mt-1 hidden">Token salah!</p>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg transition duration-200 shadow-md">
+                    Lanjut <i class="fas fa-arrow-right ml-1"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== HALAMAN PERSIAPAN ==================== -->
+    <div id="page-prep" class="hidden flex flex-col items-center justify-center h-full w-full p-4">
+        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-lg text-center">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Persiapan Ujian</h2>
+            
+            <div class="text-left bg-blue-50 p-4 rounded-lg mb-6 text-sm text-blue-800">
+                <p class="font-bold mb-2"><i class="fas fa-info-circle mr-1"></i> Peraturan Ketat (Anti-Cheat):</p>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li>Ujian menggunakan mode layar penuh (Fullscreen).</li>
+                    <li>Dilarang keluar dari layar ujian atau membuka tab lain.</li>
+                    <li>Sistem akan mendeteksi jika Anda meninggalkan layar.</li>
+                    <li>Batas maksimal peringatan adalah <strong>3 kali</strong>. Lebih dari itu, ujian otomatis dihentikan dengan status Diskualifikasi.</li>
+                </ul>
+            </div>
+
+            <button id="btnMulaiUjian" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition duration-200 shadow-md flex items-center justify-center">
+                <i class="fas fa-play mr-2"></i> Mulai Ujian Sekarang
+            </button>
+            <p id="prep-error" class="text-red-500 text-xs mt-2 hidden"></p>
+        </div>
+    </div>
+
+    <!-- ==================== HALAMAN UJIAN ==================== -->
+    <div id="page-exam" class="hidden flex flex-col h-full w-full bg-white relative">
+        <!-- Header -->
+        <header class="flex-none h-16 bg-blue-700 text-white flex justify-between items-center px-4 shadow-md z-20">
+            <div class="flex flex-col">
+                <span class="font-bold text-lg leading-tight truncate w-32 md:w-auto">Ujian PAK</span>
+                <span class="text-xs text-blue-200" id="header-student-info">Nama - Kelas</span>
+            </div>
+            
+            <div class="flex items-center space-x-3 md:space-x-6">
+                <!-- Timer -->
+                <div class="flex items-center bg-blue-800 px-3 py-1 rounded-full border border-blue-600">
+                    <i class="far fa-clock mr-2"></i>
+                    <span id="timerDisplay" class="font-mono font-bold text-lg">90:00</span>
+                </div>
+                
+                <!-- Warnings -->
+                <div class="flex items-center text-yellow-300" title="Peringatan">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    <span id="warningDisplay" class="font-bold">0/3</span>
+                </div>
+
+                <!-- Grid Soal Toggle -->
+                <button id="btnToggleGrid" class="text-white hover:text-blue-200 transition focus:outline-none">
+                    <i class="fas fa-th text-2xl"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dropdown Grid Soal -->
+        <div id="gridSoalDropdown" class="hidden absolute top-16 right-0 bg-white shadow-xl border border-gray-200 p-4 z-30 w-full md:w-80 max-h-[60vh] overflow-y-auto custom-scroll rounded-bl-lg">
+            <div class="flex justify-between items-center mb-3 border-b pb-2">
+                <span class="font-bold text-gray-700">Daftar Soal</span>
+                <div class="flex space-x-2 text-xs">
+                    <span class="flex items-center"><div class="w-3 h-3 bg-white border border-gray-400 rounded mr-1"></div>Belum</span>
+                    <span class="flex items-center"><div class="w-3 h-3 bg-green-500 rounded mr-1"></div>Sudah</span>
+                </div>
+            </div>
+            <div id="gridContainer" class="grid grid-cols-5 gap-2">
+                <!-- Tombol grid digenerate via JS -->
+            </div>
+            <button id="btnSelesaiGrid" class="mt-4 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded transition">
+                Selesai Ujian
+            </button>
+        </div>
+
+        <!-- Area Konten Utama (Scrollable) -->
+        <main class="flex-grow overflow-y-auto custom-scroll relative bg-gray-50 flex justify-center pb-20"> <!-- pb-20 for footer space -->
+            <div class="w-full max-w-3xl p-4 md:p-6 bg-white shadow-sm min-h-full">
+                <!-- Nomor Soal -->
+                <div class="mb-4 pb-2 border-b border-gray-200 flex justify-between items-end">
+                    <span class="text-xl font-bold text-blue-700">Soal No. <span id="currentQuestionNo">1</span></span>
+                </div>
+                
+                <!-- Teks Soal -->
+                <div id="questionText" class="text-lg text-gray-800 mb-6 leading-relaxed">
+                    <!-- Teks soal dimuat di sini -->
+                </div>
+
+                <!-- Pilihan Ganda -->
+                <div id="optionsContainer" class="space-y-3">
+                    <!-- Opsi dimuat di sini -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer Navigasi (Sticky) -->
+        <footer class="flex-none h-16 bg-white border-t shadow-[0_-2px_10px_rgba(0,0,0,0.05)] flex justify-between items-center px-4 absolute bottom-0 w-full z-20">
+            <button id="btnPrev" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition flex items-center">
+                <i class="fas fa-chevron-left mr-2"></i> Sebelumnya
+            </button>
+            <button id="btnNext" class="px-4 py-2 bg-blue-600 rounded-lg text-white hover:bg-blue-700 disabled:opacity-50 transition flex items-center">
+                Selanjutnya <i class="fas fa-chevron-right ml-2"></i>
+            </button>
+        </footer>
+    </div>
+
+    <!-- ==================== HALAMAN HASIL ==================== -->
+    <div id="page-result" class="hidden flex items-center justify-center h-full w-full p-4 bg-gray-100">
+        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md text-center">
+            <div id="result-icon" class="mb-4">
+                <i class="fas fa-check-circle text-6xl text-green-500"></i>
+            </div>
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">Ujian Selesai</h2>
+            <p id="result-status" class="text-lg font-semibold text-gray-600 mb-6">Status: Normal</p>
+            
+            <div class="bg-gray-50 rounded-lg p-4 mb-6 border">
+                <div class="flex justify-between border-b pb-2 mb-2">
+                    <span class="text-gray-600">Nama:</span>
+                    <span id="res-nama" class="font-bold text-gray-800"></span>
+                </div>
+                <div class="flex justify-between border-b pb-2 mb-2">
+                    <span class="text-gray-600">Kelas:</span>
+                    <span id="res-kelas" class="font-bold text-gray-800"></span>
+                </div>
+                <div class="flex justify-between border-b pb-2 mb-2">
+                    <span class="text-gray-600">Terjawab:</span>
+                    <span id="res-terjawab" class="font-bold text-gray-800"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600 font-bold">Skor Akhir:</span>
+                    <span id="res-skor" class="font-bold text-2xl text-blue-600"></span>
+                </div>
+            </div>
+            <p class="text-xs text-gray-500">Data telah dikirim ke sistem server.</p>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL PERINGATAN (CHEAT) ==================== -->
+    <div id="modal-warning" class="hidden fixed inset-0 bg-black bg-opacity-90 z-[100] flex flex-col items-center justify-center p-4">
+        <div class="bg-red-100 p-6 rounded-xl w-full max-w-sm text-center border-4 border-red-600 animate-pulse">
+            <i class="fas fa-exclamation-triangle text-5xl text-red-600 mb-4"></i>
+            <h3 class="text-2xl font-bold text-red-800 mb-2">PERINGATAN!</h3>
+            <p class="text-red-700 font-semibold mb-4">Sistem mendeteksi Anda keluar dari layar ujian.</p>
+            <p class="text-sm text-red-600 mb-6">Peringatan ke: <span id="modal-warning-count" class="font-bold text-lg"></span> dari 3</p>
+            <button id="btnMengerti" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg shadow-lg">
+                SAYA MENGERTI & KEMBALI
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL KONFIRMASI SELESAI ==================== -->
+    <div id="modal-confirm" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-xl w-full max-w-sm shadow-2xl transform scale-100 transition-transform">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Konfirmasi Selesai</h3>
+            <p class="text-gray-600 mb-2">Apakah Anda yakin ingin mengakhiri ujian?</p>
+            <div class="bg-gray-100 p-3 rounded mb-6 text-sm">
+                <p>Soal Terjawab: <span id="conf-terjawab" class="font-bold text-green-600">0</span></p>
+                <p>Belum Dijawab: <span id="conf-belum" class="font-bold text-red-500">50</span></p>
+            </div>
+            <div class="flex space-x-3">
+                <button id="btnBatalSelesai" class="flex-1 px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50">Batal</button>
+                <button id="btnYakinSelesai" class="flex-1 px-4 py-2 bg-blue-600 rounded text-white hover:bg-blue-700 font-bold">Yakin</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== KONFIGURASI ====================
+        const EXAM_TOKEN = "PAK8";
+        const EXAM_DURATION_MINUTES = 90;
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzj2GRYJavjD-fl9utkT-a76Hj0mpnZLzi-7VR_pIXkSxRMSiUTy4rehTWpDVxdpZTE/exec"; // Ganti dengan URL Webhook Anda
+        
+        // Data Soal (Diekstrak dari dokumen terlampir)
+        const questionsData = [
+            { q: "Korupsi adalah perbuatan yang dapat merugikan ....", opts: ["Diri sendiri saja", "Kepentingan negara dan masyarakat", "Keluarga sendiri", "Teman dekat"], a: 1 },
+            { q: "Mengambil uang kas sekolah untuk kepentingan pribadi merupakan perbuatan ....", opts: ["Jujur", "Disiplin", "Penyelewengan", "Tanggung jawab"], a: 2 },
+            { q: "Memberikan uang kepada seseorang agar mendapatkan keputusan yang menguntungkan disebut ....", opts: ["Suap", "Sedekah", "Tabungan", "Hadiah ulang tahun"], a: 0 },
+            { q: "Menggunakan jabatan untuk memperoleh keuntungan pribadi termasuk ....", opts: ["Kerja sama", "Penyalahgunaan wewenang", "Kedisiplinan", "Kepedulian"], a: 1 },
+            { q: "Seseorang menerima uang agar memberikan pelayanan khusus secara tidak benar. Perbuatan tersebut disebut ....", opts: ["Gotong royong", "Suap", "Kegiatan sosial", "Tanggung jawab"], a: 1 },
+            { q: "Berikut ini yang termasuk tindakan korupsi adalah ....", opts: ["Mengembalikan uang yang ditemukan", "Menggunakan uang sesuai aturan", "Mengambil uang bantuan untuk kepentingan pribadi", "Membantu teman belajar"], a: 2 },
+            { q: "Pemberian kepada pegawai negeri atau penyelenggara negara yang berhubungan dengan jabatannya dan berlawanan dengan kewajiban dapat termasuk ....", opts: ["Gratifikasi yang dilarang", "Hadiah biasa", "Tabungan", "Iuran kelas"], a: 0 },
+            { q: "Memalsukan laporan keuangan agar penggunaan uang terlihat benar merupakan tindakan ....", opts: ["Terpuji", "Koruptif", "Disiplin", "Sederhana"], a: 1 },
+            { q: "Meminta uang tambahan secara tidak sah untuk memberikan layanan merupakan contoh ....", opts: ["Pungutan liar", "Sumbangan sukarela", "Iuran resmi", "Hadiah ulang tahun"], a: 0 },
+            { q: "Salah satu akibat korupsi bagi masyarakat adalah ....", opts: ["Pelayanan umum semakin baik", "Kepercayaan masyarakat meningkat", "Pembangunan dan pelayanan masyarakat terganggu", "Semua orang menjadi sejahtera"], a: 2 },
+            { q: "Jujur berarti ....", opts: ["Berkata dan bertindak sesuai kenyataan", "Mengikuti semua perkataan teman", "Menyembunyikan kesalahan", "Mengambil milik orang lain"], a: 0 },
+            { q: "Saat menemukan uang di halaman sekolah, tindakan yang tepat adalah ....", opts: ["Menyimpannya", "Membagikannya", "Menyerahkannya kepada guru", "Membiarkannya"], a: 2 },
+            { q: "Ketika tidak mengerjakan PR, sebaiknya kita ....", opts: ["Menyalin pekerjaan teman", "Mengaku dengan jujur kepada guru", "Berbohong karena takut", "Menyalahkan teman"], a: 1 },
+            { q: "Contoh perilaku jujur saat ujian adalah ....", opts: ["Melihat jawaban teman", "Membawa catatan tersembunyi", "Mengerjakan soal sendiri", "Bertanya jawaban kepada teman"], a: 2 },
+            { q: "Jika tidak sengaja merusak barang milik sekolah, kita sebaiknya ....", opts: ["Menyembunyikannya", "Menyalahkan orang lain", "Mengaku dan bertanggung jawab", "Pulang tanpa memberi tahu"], a: 2 },
+            { q: "Orang yang jujur akan ....", opts: ["Mudah dipercaya orang lain", "Selalu mendapat hadiah", "Tidak pernah melakukan kesalahan", "Bebas dari semua aturan"], a: 0 },
+            { q: "Ketika kasir memberikan uang kembalian lebih, kita sebaiknya ....", opts: ["Mengambilnya", "Mengembalikannya", "Menyimpannya diam-diam", "Memberikannya kepada teman"], a: 1 },
+            { q: "Berikut ini yang bukan contoh kejujuran adalah ....", opts: ["Mengakui kesalahan", "Mengembalikan barang temuan", "Menyontek saat ujian", "Menyampaikan informasi sebenarnya"], a: 2 },
+            { q: "Jika teman mengajak berbohong kepada guru, sikap kita adalah ....", opts: ["Mengikuti ajakannya", "Menolak dengan sopan", "Menyuruh teman lain berbohong", "Diam lalu ikut berbohong"], a: 1 },
+            { q: "Mengapa kejujuran penting dalam kehidupan sehari-hari?", opts: ["Agar dapat menipu orang", "Agar dipercaya dan menciptakan hubungan baik", "Agar selalu dipuji", "Agar tidak perlu belajar"], a: 1 },
+            { q: "Disiplin adalah sikap ....", opts: ["Melakukan sesuatu sesuka hati", "Taat pada aturan dan tepat waktu", "Menghindari tugas", "Menyuruh orang lain bekerja"], a: 1 },
+            { q: "Datang ke sekolah tepat waktu merupakan contoh ....", opts: ["Disiplin", "Korupsi", "Malas", "Tidak peduli"], a: 0 },
+            { q: "Jika bel masuk sudah berbunyi, siswa sebaiknya ....", opts: ["Tetap bermain", "Segera masuk kelas", "Pergi ke kantin", "Pulang ke rumah"], a: 1 },
+            { q: "Mengerjakan dan mengumpulkan tugas sesuai batas waktu menunjukkan sikap ....", opts: ["Boros", "Disiplin", "Curang", "Sombong"], a: 1 },
+            { q: "Contoh disiplin di rumah adalah ....", opts: ["Tidur sepanjang hari", "Membiarkan kamar berantakan", "Melaksanakan jadwal belajar", "Mengabaikan nasihat orang tua"], a: 2 },
+            { q: "Jika melanggar peraturan sekolah, kita harus ....", opts: ["Menyalahkan teman", "Menerima konsekuensi dan memperbaiki diri", "Melarikan diri", "Mengulangi pelanggaran"], a: 1 },
+            { q: "Memakai seragam sesuai ketentuan sekolah menunjukkan sikap ....", opts: ["Disiplin", "Iri hati", "Boros", "Tidak jujur"], a: 0 },
+            { q: "Manfaat disiplin bagi seorang siswa adalah ....", opts: ["Pekerjaan menjadi terbengkalai", "Kegiatan lebih teratur", "Sering terlambat", "Tidak memiliki tanggung jawab"], a: 1 },
+            { q: "Saat mendapat jadwal piket kelas, kita sebaiknya ....", opts: ["Menunggu teman bekerja", "Pura-pura lupa", "Melaksanakan piket sesuai jadwal", "Pulang lebih awal"], a: 2 },
+            { q: "Sikap disiplin harus dilakukan ....", opts: ["Hanya saat diawasi guru", "Hanya di sekolah", "Dengan kesadaran diri di mana saja", "Jika ada hadiah"], a: 2 },
+            { q: "Tanggung jawab berarti ....", opts: ["Melaksanakan tugas dan menerima akibat perbuatan", "Menghindari semua pekerjaan", "Menyalahkan orang lain", "Melakukan sesuatu tanpa aturan"], a: 0 },
+            { q: "Siswa yang mendapat tugas sebagai ketua kelompok harus ....", opts: ["Meninggalkan kelompok", "Membagi tugas dan mengarahkan kelompok", "Mengerjakan semuanya sendiri tanpa berdiskusi", "Menyuruh teman bekerja tanpa membantu"], a: 1 },
+            { q: "Jika meminjam buku perpustakaan, kita harus ....", opts: ["Menghilangkannya", "Mengembalikannya tepat waktu", "Mencoret-coret halamannya", "Memberikannya kepada orang lain tanpa izin"], a: 1 },
+            { q: "Ketika melakukan kesalahan, sikap bertanggung jawab adalah ....", opts: ["Mengaku dan memperbaikinya", "Menyalahkan teman", "Berpura-pura tidak tahu", "Melarikan diri"], a: 0 },
+            { q: "Contoh tanggung jawab terhadap kebersihan kelas adalah ....", opts: ["Membuang sampah di lantai", "Menunggu petugas kebersihan saja", "Menjaga kelas tetap bersih", "Mencoret meja"], a: 2 },
+            { q: "Jika diberi amanah mengelola uang kas, kita harus ....", opts: ["Menggunakannya sesuka hati", "Mencatat pemasukan dan pengeluaran dengan benar", "Meminjam tanpa izin", "Menyembunyikan jumlah uang"], a: 1 },
+            { q: "Sikap bertanggung jawab terhadap tugas sekolah ditunjukkan dengan ....", opts: ["Mengerjakan tugas dengan sungguh-sungguh", "Menyalin tugas teman", "Tidak mengumpulkan tugas", "Mencari alasan agar bebas tugas"], a: 0 },
+            { q: "Apabila janji kepada teman untuk mengembalikan barang, kita harus ....", opts: ["Melupakannya", "Menepati janji", "Menunggu ditagih berkali-kali", "Menghindari teman"], a: 1 },
+            { q: "Mengapa tanggung jawab penting dalam mencegah korupsi?", opts: ["Membuat orang bebas memakai uang", "Mendorong seseorang menjaga amanah", "Membolehkan orang melanggar aturan", "Menghilangkan kewajiban"], a: 1 },
+            { q: "Ketika kelompok mendapat hasil yang kurang baik, setiap anggota sebaiknya ....", opts: ["Saling menyalahkan", "Mengevaluasi dan memperbaiki pekerjaan bersama", "Menyembunyikan hasil", "Meninggalkan kelompok"], a: 1 },
+            { q: "Sederhana berarti ....", opts: ["Hidup sesuai kebutuhan dan tidak berlebihan", "Membeli semua barang yang diinginkan", "Selalu mengikuti gaya hidup orang lain", "Menghamburkan uang"], a: 0 },
+            { q: "Contoh perilaku sederhana di sekolah adalah ....", opts: ["Membawa perlengkapan belajar secukupnya", "Memamerkan barang mahal", "Membeli barang hanya untuk pamer", "Menghamburkan uang jajan"], a: 0 },
+            { q: "Menggunakan uang saku dengan bijak berarti ....", opts: ["Menghabiskan semuanya setiap hari", "Membeli barang yang tidak diperlukan", "Mendahulukan kebutuhan", "Meminjam uang untuk bergaya"], a: 2 },
+            { q: "Sikap sederhana dapat membantu mencegah korupsi karena ....", opts: ["Mendorong keinginan memiliki barang mewah", "Mengurangi sifat serakah dan keinginan berlebihan", "Membuat orang ingin dipuji", "Membolehkan mengambil hak orang lain"], a: 1 },
+            { q: "Jika teman memiliki telepon genggam mahal, kita sebaiknya ....", opts: ["Memaksa orang tua membelikan yang sama", "Merasa iri dan marah", "Tetap bersyukur dengan milik sendiri", "Mengejek teman tersebut"], a: 2 },
+            { q: "Membeli barang berdasarkan kebutuhan merupakan contoh ....", opts: ["Hidup sederhana", "Hidup boros", "Keserakahan", "Pamer kekayaan"], a: 0 },
+            { q: "Berikut ini perilaku yang tidak mencerminkan hidup sederhana adalah ....", opts: ["Menabung sebagian uang saku", "Merawat barang yang dimiliki", "Membeli barang hanya untuk pamer", "Menggunakan barang sesuai kebutuhan"], a: 2 },
+            { q: "Salah satu manfaat hidup sederhana adalah ....", opts: ["Membuat pengeluaran lebih teratur", "Mendorong perilaku boros", "Menambah sifat iri hati", "Membuat kita selalu ingin dipuji"], a: 0 },
+            { q: "Saat mendapat uang saku, tindakan yang baik adalah ....", opts: ["Menghabiskannya untuk jajan", "Menyisihkan sebagian untuk ditabung", "Membeli semua yang sedang tren", "Meminjamkan lalu meminta lebih banyak"], a: 1 },
+            { q: "Sikap sederhana sebaiknya diterapkan ....", opts: ["Hanya ketika tidak punya uang", "Hanya saat berada di sekolah", "Dalam kehidupan sehari-hari", "Hanya ketika dilihat orang lain"], a: 2 }
+        ];
+
+        // State Aplikasi
+        const state = {
+            nama: "",
+            kelas: "",
+            waktuMulai: null,
+            waktuSisa: EXAM_DURATION_MINUTES * 60, // dalam detik
+            intervalTimer: null,
+            peringatan: 0,
+            maxPeringatan: 3,
+            statusUjian: "Normal",
+            isUjianAktif: false,
+            soalAktif: 0,
+            jawaban: new Array(questionsData.length).fill(null),
+            lastCheatDetectTime: 0 // untuk debounce
+        };
+
+        // DOM Elements
+        const pages = {
+            login: document.getElementById('page-login'),
+            prep: document.getElementById('page-prep'),
+            exam: document.getElementById('page-exam'),
+            result: document.getElementById('page-result')
+        };
+
+        // ==================== NAVIGASI HALAMAN ====================
+        function showPage(pageId) {
+            Object.values(pages).forEach(p => p.classList.add('hidden'));
+            pages[pageId].classList.remove('hidden');
+        }
+
+        // ==================== AUDIO API (SIRINE) ====================
+        let audioCtx;
+        let sirenOsc;
+        let sirenInterval;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSiren() {
+            if (sirenOsc) return; // Sudah bunyi
+            initAudio();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            sirenOsc = audioCtx.createOscillator();
+            sirenOsc.type = 'square';
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.value = 0.1; // Volume
+            
+            sirenOsc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            sirenOsc.start();
+
+            let isHigh = false;
+            sirenInterval = setInterval(() => {
+                if(sirenOsc) {
+                    sirenOsc.frequency.setValueAtTime(isHigh ? 400 : 800, audioCtx.currentTime);
+                    isHigh = !isHigh;
+                }
+            }, 300);
+        }
+
+        function stopSiren() {
+            if (sirenOsc) {
+                sirenOsc.stop();
+                sirenOsc.disconnect();
+                sirenOsc = null;
+            }
+            if (sirenInterval) {
+                clearInterval(sirenInterval);
+                sirenInterval = null;
+            }
+        }
+
+        // ==================== LOGIKA LOGIN ====================
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const tokenInput = document.getElementById('inputToken').value.toUpperCase();
+            
+            if (tokenInput !== EXAM_TOKEN) {
+                document.getElementById('tokenError').classList.remove('hidden');
+                return;
+            }
+            
+            state.nama = document.getElementById('inputNama').value;
+            state.kelas = document.getElementById('inputKelas').value;
+            
+            document.getElementById('header-student-info').textContent = `${state.nama} - ${state.kelas}`;
+            showPage('prep');
+        });
+
+        // ==================== PERSIAPAN ====================
+        document.getElementById('btnMulaiUjian').addEventListener('click', async () => {
+            try {
+                const elem = document.documentElement;
+                if (elem.requestFullscreen) {
+                    await elem.requestFullscreen();
+                } else if (elem.webkitRequestFullscreen) { /* Safari */
+                    await elem.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) { /* IE11 */
+                    await elem.msRequestFullscreen();
+                }
+            } catch (err) {
+                // Tetap lanjutkan ujian meskipun browser/iframe menolak mode fullscreen
+                console.warn("Mode fullscreen tidak diizinkan oleh browser/iframe, melanjutkan ujian dalam mode standar:", err.message);
+            }
+            startExam();
+        });
+
+        // ==================== SISTEM UJIAN ====================
+        function startExam() {
+            state.isUjianAktif = true;
+            state.waktuMulai = new Date();
+            initAudio(); // Initialize audio context on user gesture
+            showPage('exam');
+            generateGrid();
+            renderQuestion();
+            startTimer();
+            setupAntiCheat();
+        }
+
+        function startTimer() {
+            updateTimerDisplay();
+            state.intervalTimer = setInterval(() => {
+                state.waktuSisa--;
+                updateTimerDisplay();
+                
+                if (state.waktuSisa <= 0) {
+                    clearInterval(state.intervalTimer);
+                    forceSubmit("Waktu Habis");
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(state.waktuSisa / 60);
+            const seconds = state.waktuSisa % 60;
+            const display = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            const timerEl = document.getElementById('timerDisplay');
+            timerEl.textContent = display;
+            
+            if (state.waktuSisa < 300) { // Kurang dari 5 menit
+                timerEl.parentElement.classList.remove('bg-blue-800', 'border-blue-600');
+                timerEl.parentElement.classList.add('bg-red-600', 'border-red-500', 'animate-pulse');
+            }
+        }
+
+        function renderQuestion() {
+            const q = questionsData[state.soalAktif];
+            document.getElementById('currentQuestionNo').textContent = state.soalAktif + 1;
+            document.getElementById('questionText').innerHTML = q.q;
+            
+            const optContainer = document.getElementById('optionsContainer');
+            optContainer.innerHTML = '';
+            
+            const labels = ['A', 'B', 'C', 'D'];
+            
+            q.opts.forEach((optText, index) => {
+                const isChecked = state.jawaban[state.soalAktif] === index;
+                
+                const label = document.createElement('label');
+                label.className = `option-label relative flex items-start p-4 border-2 rounded-xl transition duration-200 hover:bg-gray-50 ${isChecked ? 'bg-blue-50 border-blue-500' : 'border-gray-200 bg-white'}`;
+                
+                label.innerHTML = `
+                    <input type="radio" name="q_option" value="${index}" class="option-input sr-only" ${isChecked ? 'checked' : ''}>
+                    <div class="option-box flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center mr-4 transition ${isChecked ? 'border-blue-500 bg-blue-500 text-white' : 'border-gray-300 text-gray-500'}">
+                        <span class="font-bold">${labels[index]}</span>
+                    </div>
+                    <div class="pt-1 text-gray-800 flex-grow">${optText}</div>
+                `;
+                
+                label.querySelector('input').addEventListener('change', (e) => {
+                    saveAnswer(state.soalAktif, parseInt(e.target.value));
+                    renderQuestion(); // Re-render to update classes
+                    updateGridColors();
+                });
+                
+                optContainer.appendChild(label);
+            });
+
+            // Update navigasi
+            document.getElementById('btnPrev').disabled = state.soalAktif === 0;
+            document.getElementById('btnNext').disabled = state.soalAktif === questionsData.length - 1;
+            updateGridColors();
+        }
+
+        function saveAnswer(qIndex, answerIndex) {
+            state.jawaban[qIndex] = answerIndex;
+        }
+
+        // Navigasi Bawah
+        document.getElementById('btnPrev').addEventListener('click', () => {
+            if (state.soalAktif > 0) { state.soalAktif--; renderQuestion(); }
+        });
+        document.getElementById('btnNext').addEventListener('click', () => {
+            if (state.soalAktif < questionsData.length - 1) { state.soalAktif++; renderQuestion(); }
+        });
+
+        // Grid Soal
+        function generateGrid() {
+            const grid = document.getElementById('gridContainer');
+            grid.innerHTML = '';
+            for (let i = 0; i < questionsData.length; i++) {
+                const btn = document.createElement('button');
+                btn.className = `w-10 h-10 flex items-center justify-center rounded border font-bold text-sm transition focus:outline-none grid-btn-${i}`;
+                btn.textContent = i + 1;
+                btn.addEventListener('click', () => {
+                    state.soalAktif = i;
+                    renderQuestion();
+                    document.getElementById('gridSoalDropdown').classList.add('hidden');
+                });
+                grid.appendChild(btn);
+            }
+        }
+
+        function updateGridColors() {
+            for (let i = 0; i < questionsData.length; i++) {
+                const btn = document.querySelector(`.grid-btn-${i}`);
+                if (!btn) continue;
+                
+                btn.className = `w-10 h-10 flex items-center justify-center rounded border font-bold text-sm transition focus:outline-none grid-btn-${i} `;
+                
+                if (state.soalAktif === i) {
+                    btn.classList.add('bg-blue-500', 'text-white', 'border-blue-600', 'ring-2', 'ring-blue-300');
+                } else if (state.jawaban[i] !== null) {
+                    btn.classList.add('bg-green-500', 'text-white', 'border-green-600');
+                } else {
+                    btn.classList.add('bg-white', 'text-gray-700', 'border-gray-300', 'hover:bg-gray-100');
+                }
+            }
+        }
+
+        document.getElementById('btnToggleGrid').addEventListener('click', () => {
+            document.getElementById('gridSoalDropdown').classList.toggle('hidden');
+        });
+
+        // ==================== FITUR ANTI-CURANG ====================
+        function handleCheatEvent(type) {
+            if (!state.isUjianAktif) return;
+
+            const now = Date.now();
+            // Debounce 2 detik
+            if (now - state.lastCheatDetectTime < 2000) return;
+            state.lastCheatDetectTime = now;
+
+            state.peringatan++;
+            document.getElementById('warningDisplay').textContent = `${state.peringatan}/${state.maxPeringatan}`;
+            document.getElementById('modal-warning-count').textContent = state.peringatan;
+            
+            if (state.peringatan >= state.maxPeringatan) {
+                state.statusUjian = "Diskualifikasi (Curang)";
+                forceSubmit(state.statusUjian);
+            } else {
+                playSiren();
+                document.getElementById('modal-warning').classList.remove('hidden');
+                
+                // Coba paksa fullscreen lagi
+                const elem = document.documentElement;
+                if (!document.fullscreenElement && elem.requestFullscreen) {
+                    elem.requestFullscreen().catch(e => console.log(e));
+                }
+            }
+        }
+
+        function setupAntiCheat() {
+            // 1. Blokir Klik Kanan
+            document.addEventListener('contextmenu', e => { e.preventDefault(); });
+
+            // 2. Blokir Keyboard Shortcuts (F12, Ctrl+C, Ctrl+V, dll)
+            document.addEventListener('keydown', e => {
+                if (
+                    e.key === 'F12' || 
+                    (e.ctrlKey && e.shiftKey && e.key === 'I') || 
+                    (e.ctrlKey && e.key === 'c') || 
+                    (e.ctrlKey && e.key === 'v') ||
+                    (e.ctrlKey && e.key === 'x') ||
+                    (e.ctrlKey && e.key === 'u')
+                ) {
+                    e.preventDefault();
+                }
+            });
+
+            // 3. Blokir Copy Paste
+            document.addEventListener('copy', e => e.preventDefault());
+            document.addEventListener('paste', e => e.preventDefault());
+            document.addEventListener('cut', e => e.preventDefault());
+
+            // 4. Deteksi Pindah Layar/Tab
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) handleCheatEvent('visibility');
+            });
+            
+            window.addEventListener('blur', () => {
+                // Blur kadang memicu false positive jika klik iframe (meski disini tdk ada iframe)
+                // Filter sedikit untuk memastikan
+                if(state.isUjianAktif) handleCheatEvent('blur');
+            });
+            
+            // Fullscreen change detect
+            document.addEventListener('fullscreenchange', () => {
+                if (!document.fullscreenElement && state.isUjianAktif) {
+                    handleCheatEvent('exit_fullscreen');
+                }
+            });
+        }
+
+        document.getElementById('btnMengerti').addEventListener('click', () => {
+            stopSiren();
+            document.getElementById('modal-warning').classList.add('hidden');
+            const elem = document.documentElement;
+            if (!document.fullscreenElement && elem.requestFullscreen) {
+                elem.requestFullscreen().catch(e => console.log(e));
+            }
+        });
+
+        // ==================== PENGUMPULAN & SUBMIT ====================
+        document.getElementById('btnSelesaiGrid').addEventListener('click', confirmSubmit);
+        
+        function confirmSubmit() {
+            document.getElementById('gridSoalDropdown').classList.add('hidden');
+            const terjawab = state.jawaban.filter(a => a !== null).length;
+            const belum = questionsData.length - terjawab;
+            
+            document.getElementById('conf-terjawab').textContent = terjawab;
+            document.getElementById('conf-belum').textContent = belum;
+            
+            document.getElementById('modal-confirm').classList.remove('hidden');
+        }
+
+        document.getElementById('btnBatalSelesai').addEventListener('click', () => {
+            document.getElementById('modal-confirm').classList.add('hidden');
+        });
+
+        document.getElementById('btnYakinSelesai').addEventListener('click', () => {
+            document.getElementById('modal-confirm').classList.add('hidden');
+            forceSubmit("Selesai Normal");
+        });
+
+        function forceSubmit(reason = "Selesai") {
+            state.isUjianAktif = false;
+            clearInterval(state.intervalTimer);
+            stopSiren();
+
+            // Keluar fullscreen
+            if (document.fullscreenElement) {
+                document.exitFullscreen().catch(err => console.log(err));
+            }
+
+            if(state.statusUjian === "Normal" && reason !== "Selesai Normal") {
+                state.statusUjian = reason;
+            }
+
+            calculateAndSendData();
+        }
+
+        async function calculateAndSendData() {
+            // Hitung Skor
+            let benar = 0;
+            state.jawaban.forEach((ans, index) => {
+                if (ans === questionsData[index].a) {
+                    benar++;
+                }
+            });
+            const skor = Math.round((benar / questionsData.length) * 100);
+            const terjawab = state.jawaban.filter(a => a !== null).length;
+
+            // Tampilkan UI Hasil
+            showPage('result');
+            document.getElementById('res-nama').textContent = state.nama;
+            document.getElementById('res-kelas').textContent = state.kelas;
+            document.getElementById('res-terjawab').textContent = `${terjawab} / ${questionsData.length}`;
+            document.getElementById('res-skor').textContent = skor;
+            
+            const statusEl = document.getElementById('result-status');
+            const iconEl = document.getElementById('result-icon');
+            
+            if (state.statusUjian.includes("Diskualifikasi")) {
+                statusEl.textContent = `Status: ${state.statusUjian}`;
+                statusEl.classList.replace('text-gray-600', 'text-red-600');
+                iconEl.innerHTML = '<i class="fas fa-times-circle text-6xl text-red-500"></i>';
+                document.getElementById('res-skor').textContent = "0 (Batal)";
+                document.getElementById('res-skor').classList.replace('text-blue-600', 'text-red-600');
+            } else {
+                statusEl.textContent = `Status: Selesai`;
+            }
+
+            // Data untuk dikirim
+            const payload = {
+                waktu_selesai: new Date().toISOString(),
+                nama: state.nama,
+                kelas: state.kelas,
+                skor: state.statusUjian.includes("Diskualifikasi") ? 0 : skor,
+                status: state.statusUjian,
+                jml_terjawab: terjawab,
+                detail_jawaban: state.jawaban.map(a => a === null ? '-' : ['A','B','C','D'][a]).join(',')
+            };
+
+            // Kirim ke Google Apps Script (Webhook)
+            try {
+                // Menggunakan no-cors karena ini sekadar fire-and-forget dummy URL
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                console.log("Data terkirim.");
+            } catch (err) {
+                console.error("Gagal mengirim data:", err);
+            }
+        }
+    </script>
+</body>
+</html>
